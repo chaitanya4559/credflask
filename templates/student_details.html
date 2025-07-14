@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Students & Courses</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-blue-700">Students & Enrolled Courses</h2>
+      <a href="/add_student" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        + Add Student
+      </a>
+    </div>
+
+    {% if students %}
+      <ul class="space-y-4">
+        {% for s in students %}
+          <li class="bg-gray-50 border p-4 rounded">
+            <p class="text-lg font-semibold">{{ s.name }}</p>
+            <p class="text-sm text-gray-600">
+              Enrolled in: 
+              {% if s.courses %}
+                {{ s.courses | join(', ') }}
+              {% else %}
+                <span class="italic text-gray-400">No courses</span>
+              {% endif %}
+            </p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-gray-500">No students found.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

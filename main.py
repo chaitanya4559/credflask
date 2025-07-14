@@ -6,6 +6,17 @@ app=Flask(__name__)
 client = MongoClient("mongodb+srv://rsUpkufpWfxZ3AIX:rsUpkufpWfxZ3AIX@cluster0.dll5rqr.mongodb.net/")
 db=client["cred"]
 users_collection=db["flask_cred"]
+students = db["students"]
+courses = db["courses"]
+@app.before_request
+def seed_courses():
+    if courses.count_documents({}) == 0:
+        courses.insert_many([
+            {"name": "Python"},
+            {"name": "Flask"},
+            {"name": "MongoDB"},
+        ])
+
 @app.route("/")
 def index():
     users=list(users_collection.find())
@@ -32,6 +43,39 @@ def edit_user(id):
 @app.route("/delete/<id>")
 def delete_user(id):
     users_collection.delete_one({"_id": ObjectId(id)})
-    return redirect(url_for("index"))  
+    return redirect(url_for("index")) 
+     
+@app.route("/add_student",methods=["GET","POST"])
+def add_students():
+    all_courses=list(courses.find())
+    if request.method=="POST":
+        name=request.form["name"]
+        selected_ids=request.form.getlist("courses")
+        course_ids=[ObjectId(cid) for cid in selected_ids]
+        students.insert_one({"name": name, "course_ids": course_ids})
+        return redirect(url_for("student_details"))
+
+    return render_template("add_student.html", courses=all_courses)  
+
+@app.route("/student_details", methods=["GET"])
+def student_details():
+    student_list = list(students.find())
+    results = []
+
+    for student in student_list:
+        enrolled_courses = []
+        for cid in student.get("course_ids", []):
+            course = courses.find_one({"_id": cid})
+            if course:
+                enrolled_courses.append(course["name"])
+        results.append({
+            "name": student["name"],
+            "courses": enrolled_courses
+        })
+
+    return render_template("student_details.html", students=results)
+
+    
+
 if __name__ == "__main__":
-    app.run(debug=True)         
+    app.run(debug=True)
