@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Books & Their Authors</title>
+</head>
+<body>
+  <h1>Books & Their Authors</h1>
+  <ul>
+    {% for book in books %}
+      <li>
+        <strong>{{ book.title }} ({{ book.year }})</strong><br />
+        Authors: {{ book.authors | join(', ') if book.authors else "None" }}
+      </li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

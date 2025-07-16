@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Authors & Their Books</title>
+</head>
+<body>
+  <h1>Authors & Their Books</h1>
+
+  {% for author in authors %}
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+      <strong>{{ author.name }}</strong><br />
+      <p>Books: {{ author.books | join(', ') }}</p>
+
+  <form method="POST" action="/update_author_books/{{ author._id }}">
+  {% for book in books %}
+    <input
+      type="checkbox"
+      name="books"
+      value="{{ book._id }}"
+      {% if book._id in author.book_ids %}checked{% endif %}
+    />
+    {{ book.title }}<br />
+  {% endfor %}
+  <button type="submit">Update</button>
+</form>
+<hr />
+
+    </div>
+  {% endfor %}
+</body>
+</html>

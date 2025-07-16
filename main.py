@@ -8,6 +8,10 @@ db=client["cred"]
 users_collection=db["flask_cred"]
 students = db["students"]
 courses = db["courses"]
+
+authors=db["authors"]
+books=db["books"]
+
 @app.before_request
 def seed_courses():
     if courses.count_documents({}) == 0:
@@ -71,11 +75,83 @@ def student_details():
         results.append({
             "name": student["name"],
             "courses": enrolled_courses
-        })
-
+        })        
     return render_template("student_details.html", students=results)
 
-    
+
+@app.route("/add_author", methods=["GET", "POST"])
+def add_author():
+    if request.method == "POST":
+        author_name = request.form["author_name"]
+        authors.insert_one({"name": author_name,"book_ids": []})
+        return redirect(url_for("list_authors"))
+    return render_template("add_author.html")
+   
+
+
+@app.route("/authors",methods=["GET","POST"])
+def list_authors():
+    all_books=list(books.find())
+    data=[]
+    for author in authors.find():
+        author_books=[]
+        for book_id in author.get("book_ids",[]):
+            book=books.find_one({"_id": book_id})
+            if book:
+                author_books.append(book["title"])
+        data.append({"_id":author["_id"],"name":author["name"],"book_ids":author.get("book_ids",[]),"books":author_books})
+    return render_template("authors_list.html",authors=data,books=all_books)             
+
+
+@app.route("/add_book",methods=["GET","POST"])
+def add_book():
+    if request.method=="POST":
+        title=request.form["title"]
+        year=request.form["year"]
+        books.insert_one({"title":title,"year":int(year)})
+        return redirect(url_for("add_book"))
+    return render_template("add_book.html")    
+
+
+@app.route("/books")
+def view_books():
+    all_books = []
+    for book in books.find():
+        book_authors = []
+        for aid in book.get("author_ids", []):
+            author = authors.find_one({"_id": aid})
+            if author:
+                book_authors.append(author["name"])
+        all_books.append({
+            "title": book["title"],
+            "year": book["year"],
+            "authors": book_authors
+        })
+    return render_template("books_list.html", books=all_books)
+
+
+
+
+@app.route("/update_author_books/<author_id>", methods=["POST"])
+def update_author_books(author_id):
+    selected_book_ids = request.form.getlist("books")
+    book_object_ids = [ObjectId(bid) for bid in selected_book_ids]
+    authors.update_one(
+        {"_id": ObjectId(author_id)},
+        {"$set": {"book_ids": book_object_ids}}
+    )
+    books.update_many(
+        {"author_ids": ObjectId(author_id)},
+        {"$pull": {"author_ids": ObjectId(author_id)}}
+    )
+    for book_id in book_object_ids:
+        books.update_one(
+            {"_id": book_id},
+            {"$addToSet": {"author_ids": ObjectId(author_id)}}
+        )
+
+    return redirect(url_for("list_authors"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
